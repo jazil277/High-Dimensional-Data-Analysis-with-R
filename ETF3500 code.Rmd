@@ -1,0 +1,384 @@
+---
+title: "High Dimensiona Data Analysis"
+author: "Syed Jazil Hussain 28900766"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,eval=TRUE, error=TRUE)
+```
+
+```{r, echo=FALSE ,eval=TRUE,message=FALSE}
+library(MASS)
+library(ca)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(stats)
+library(broom)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(tibble)
+library(rmarkdown)
+library(mclust)
+```
+
+\newpage
+
+# A Standardisation and Distance **(10 Marks)**
+
+*The following question only requires you to use the variables `income`, `experience` and `age`.*
+
+*1. Standardise `income`, `experience` and `age` by centering (subtracting the mean) and scaling (dividing by the standard deviation) using the `scale` function. Print out the first 5 observations.* **(1 Marks)**
+Beer%>%
+  dplyr::select(cost,calories,alcohol)%>%
+  summarise_all(mean)->means
+print(means)
+
+Beer%>%
+  dplyr::select(cost,calories,alcohol)%>%
+  summarise_all(sd)->sds
+print(sds)
+
+PabstEL_std<-(PabstEL-means)/sds
+Augs_std<-(Augs-means)/sds
+
+dif<-PabstEL_std-Augs_std
+print(dif)
+
+```{r}
+data<-read.csv("data28900766.csv")
+
+data%>%
+  select(income,experience,age)%>%
+  scale%>%
+head(Data, n=5)
+ 
+
+```
+
+
+*2. From your answer to Q1, what is the standardised value of `income` for the first observation (Nichols) in your data* **(1 Mark)**
+
+The standardised value of income for the first observtion (Nichols) is 1.2516
+
+*3. The government proposes a universal basic income meaning that $10000 is added to every income.  Create a variable `NewIncome` which is equal to `income` plus 10000 (**`NewIncome` is only to be used for question A**).* **(1 Mark)**
+
+```{r}
+data%>%
+  mutate(NewIncome=10000+income)->datanew
+head(datanew)
+```
+
+*4. Find the Euclidean Distance between the first and second observation (Nichols and Fisher) using `income`, `experience` and `age` as the variables.  Do NOT standardise the data* **(1 Marks)**
+
+Nichols:
+Income=166637.64, Experience=7, Age=33
+
+Fisher:
+Income=177771.84, Experience=17, Age 44
+
+Euclidean distance = sqrt[(income1-income2)^2+(experience1-experience2)^2+(age1-age2)^2]
+=11134.21
+
+
+*5. Find the Euclidean Distance between the first and second observation (Nichols and Fisher) using `NewIncome`, `experience` and `age` as the variables.  Do NOT standardise the data* **(1 Mark)**
+
+Nichols:
+NewIncome=176637.64, Experience=7, Age=33
+
+Fisher:
+NewIncome=187771.84, Experience=17, Age 44
+
+Euclidean distance = sqrt[(income1-income2)^2+(experience1-experience2)^2+(age1-age2)^2]
+=11134.18
+
+*6. Are the answers to Question 4 and Question 5 the same?  Why or why not?*  **(1 Marks)**
+
+The answers between question 4 and 5 are the same because the new income increases by the same ammount resulting in the same euclidean distance being calculated
+
+*7. Consider that you are working for a business that streams movies.  You have access to data on a list of movies that each customer has seen.  How could you use this data to define a distance between two different customers?* **(2 Marks)**
+
+Jaccard similarity is used to determine how close two sets of data are, in this case, the two different customers and the list of movies they have seen. The jaccard distance will be calculated by subtracting the jaccard similarity from 1. 
+
+*8. For the example in the previous question, describe how collaborative filtering can be used to make recommendations of movies to customers.*  **(2 Marks)**
+
+Collaborative filtering is a recommendation system, it is an algorithm where similar users or items are based off of similar users. In the case of the customers, it will see which movies they have in common, and based off of that conslusion it will recommend them similar movies. If they have movies in common and customer 1 has seen a specific movie, it will recommend that movie to customer 2.
+
+\newpage
+
+# B Principal Components Analysis **(10 Marks)**
+
+*1. Carry out Principal Components on the data using all numeric variables.* **(2 Marks)**
+
+
+```{r}
+data%>%
+  select_if(is.numeric)%>%
+  prcomp(scale.=TRUE)->pca
+
+pca
+```
+
+*2. Did you standardise the variables?  Why or why not?* **(2 Marks)**
+
+Yes, we standardised the variables because they are calcaulted in different units (i.e income is in thousands). This ensures that the data is sensitive to the units of measurement. 
+
+*3. What is the weight on number of siblings for the 4th principal component?* **(1 Mark)**
+
+The weight of on the number of siblings for the 4th principal component is 0.6249
+
+*4. What is the standard deviation of the 3rd principal component?* **(1 Mark)**
+
+```{r}
+summary(pca)
+```
+
+The standard deviation of the 3rd principal component is 0.69603
+
+*5. Make a distance biplot.*  **(1 Marks)**
+
+```{r}
+biplot(pca,cex=0.5)
+```
+
+*6. Pick two variables that according to the biplot are highly postively correlated with one another.  If there are no such variables for your dataset, then describe what you would be looking for in the biplot to indicate that two variables are postively correlated.* **(1 Mark)**
+
+Age and Experience, they are close together in the same direction. 
+
+*7. Pick two variables that according to the biplot are uncorrelated.  If there are no such variables for your dataset, then describe what you would be looking for in the biplot to indicate that two variables are uncorrelated.* **(1 Mark)**
+
+Education years and siblings, they are far apart in the opposite direction.
+
+*8. What proportion of overall variation in the data is explained by the biplot?* **(1 Mark)**
+
+Proportion of variance of PC1 + PC2 = 0.4863 + 0.3683
+= 0.8547, 85.47% of the variation of the data is explained by the biplot.
+
+\newpage
+
+# C Multidimensional Scaling **(15 Marks)**
+
+*1. Using only those observations for which `second_language` is French, carry out classical multidimensional scaling.  Find a two dimensional representation and use standardised value of `income`, `experience`, `age`, `education_years` and `siblings` as the variables.*  **(4 Marks)**
+
+```{r}
+
+data%>%
+  select(income,experience,age,education_years,siblings)%>%
+  scale%>%
+  dist->dd
+
+rownames(data)->attributes(dd)$Labels
+
+cmds<-cmdscale(dd,eig=T)
+
+cmds$points%>%
+  as.data.frame()->df
+
+df<-add_column(df,Surnames=data$surname)
+
+              
+```
+
+*2. Plot a 2-dimensional representation of this data. Rather than plot the observations as points use the individuals' surnames.* **(3 Marks)**
+
+
+```{r}
+ggplot(df, aes(x=V1,y=V2,label=`Surnames`))+geom_text(size=2)
+```
+
+
+*3. Name two individuals (by surname) who are similar according to your plot in Question 2, and two individuals (by surname) who are different.  If you were unable to generate the plot in Question 2, then describe how you would answer this question.* **(1 Mark)**
+
+INCLUDE YOUR ANSWER HERE
+
+*4. Plot the same plot as in Question 2 using the Sammon mapping.*  **(3 Marks)**
+
+
+```{r}
+smds<-sammon(dd) 
+
+df<-add_column(df,Sammon1=smds$points[,1],
+               Sammon2=smds$points[,2])
+
+ggplot(df,aes(x=Sammon1,y=Sammon2,label='surname'))+geom_point()
+```
+
+
+*5. Are you conclusions in Question 3 robust to using a different multidimensional scaling method?  If you were unable to generate the plot in Question 2 and/or Question 4,  then describe how you would answer this question.* **(1 Mark)**
+
+The conclusion in question 3 is robust because sammon mapping and classical MDS give us the same solutions.
+
+*6. Describe the differences between classical multidimensional scaling and the Sammon mapping.*  **(3 Marks)**
+
+Sammon mapping is not based on eigenvalue decomposition, it is not based on rotation and it is non linear mapping unlike classical MDS which is based on eigenvalue decomposition, is based on rotation and is linear mapping.
+
+\newpage
+
+# D Correspondence analysis (ETF3500 students only) **(10 Marks)**
+
+*1. Construct a contingency table between the `sector` and `second_language` variables.* **(1 Mark)**
+
+
+```{r}
+data%>%
+  select(sector,second_language)%>%
+  table%>%
+  addmargins()->crosstab
+print(crosstab)
+
+```
+
+*2. Using the contingency table in point 1, perform correspondance analysis on the `sector` and `second_language` variables and visualise the results.* **(2 Marks)**
+
+
+```{r}
+summary(data$sector)
+summary(data$second_language)
+
+table(data$sector,data$second_language)%>%
+  ca()%>%
+  plot(cex=0.2)
+```
+
+
+*3. Based on the results in point 2, which sector is most associated to people that speak Spanish as a second language?* **(1 Mark)**
+
+
+```{r}
+summary(data$sector)
+summary(data$second_language)
+
+table(data$sector,data$second_language)%>%
+  ca()%>%
+  plot(cex=0.2)
+```
+
+The sector Manufacturing is highly associated with people that speak Spanish.
+
+
+*4. Based on the results in point 2, how much inertia is explained by the first dimension?***(1 Mark)**
+
+33% of the inertia is explained by the first dimension.
+
+*5. Repeat point 2, but this time, only consider those individuals whose `income` is greater than 100000 and `age` is greater than 25. * **(2 Marks)**
+
+```{r}
+data_filtered<-filter(data,income>100000 & age>25)
+
+table(data_filtered$sector,data_filtered$second_language)%>%
+  ca%>%
+  plot()
+```
+
+*6. Based on the results in point 5, how much inertia is explained by the second dimension?* **(1 Mark)**
+
+22.1% of the inertia is explained by the second dimension.
+
+*7. Compute how much inertia is explained overall by the figures in points 2 and 5. Discuss in which of these two exercises CA helps explain a larger amount of inertia.* **(2 Marks)**
+
+points 2 = 20.6 + 33
+=53.6%
+Points 2 helps explain a total of 53.6% of the total inertia.
+points 5 = 22.1 + 34
+=56.1%
+points 5 helps explain a total of 56.1% of the total inertia.
+
+The correspondence analysis for points 5 helps explaining 2.5% more inertia than points 2. 
+\newpage
+
+# E Correspondence analysis (ETF5500 students only) **(10 Marks)**
+
+*1. Using only individuals whose `gender` is Female and whose `income` is less than $200000, construct a contingency table between the `sector` and `second_language` variables.* **(1 Mark)**
+
+```{r}
+#INCLUDE YOUR R CODE HERE
+```
+
+*2. Using the contingency table in point 1, perform correspondance analysis on the `sector` and `second_language` variables and visualise the results.* **(1 Marks)**
+
+```{r}
+#INCLUDE YOUR R CODE HERE
+```
+
+*3. Based on the results in point 2, which sector is most associated to people that speak Spanish as a second language?* **(1 Mark)**
+
+
+```{r}
+#INCLUDE YOUR R CODE HERE
+```
+
+INCLUDE YOUR ANSWER HERE
+
+*4. Based on the results in point 2, how much inertia is explained by the first dimension?***(1 Mark)**
+
+INCLUDE YOUR ANSWER HERE
+
+*5. Repeat point 2, but this time, only consider those individuals whose `gender` is Male and whose `income` is less than $200000. * **(1 Marks)**
+
+```{r}
+#INCLUDE YOUR R CODE HERE
+```
+
+*6. Based on the results in point 5, how much inertia is explained by the second dimension?* **(1 Mark)**
+
+INCLUDE YOUR ANSWER HERE
+
+
+*7. Compute how much inertia is explained overall by the figures in points 2 and 5. Discuss in which of these two figures CA helps explain a larger amount of inertia.* **(1 Marks)**
+
+INCLUDE YOUR ANSWER HERE
+
+
+*8. Disscuss the differences or similarities between the results obtained in points 2 and 5, for example, are the associations between `sector` and `second_language` consistent? * **(1 Mark)**
+
+INCLUDE YOUR ANSWER HERE
+
+
+*9. In your own words, describe the role that the sigular value decompostion (SVD) of a matrix plays in correspondace analysis.* **(2 Marks)**
+
+INCLUDE YOUR ANSWER HERE
+
+\newpage
+
+# F Factor Modelling **(5 Marks)**
+
+*1. Fit a 2-factor model to the numerical variables in the dataset (set `rotation`='none').* **(1 Mark)**
+
+
+```{r}
+data%>%
+  select_if(is.numeric)%>%
+  factanal(factors = 2,rotation = 'none',scores = 'none')->fa_n
+fa_n
+```
+
+*2. For each of the two factors, list the variables whose factor loadings are greater than 0.1 in absolute value.* **(1 Mark)**
+
+For factor 1, the loadings that are greater than 0.1 in absolute value are income (0.394), experience (0.992), age(0.952), education years (0.133)
+
+For factor 1, the loadings that are greater than 0.1 in absolute value are income (0.526), education years (0.985), siblings (-0.791).
+
+*3. Provide a plot that visualises the association between factors and variables.* **(1 Mark)**
+
+
+```{r}
+plot(fa_n)
+```
+
+
+*4. Fit a 2-factor model to the numerical variables in the dataset, but now setting `rotation = "promax"`.* **(1 Mark)**
+
+
+```{r}
+data%>%
+  select_if(is.numeric)%>%
+  factanal(factors = 2,rotation = 'promax',scores = 'none')->fa_p
+fa_p
+```
+
+
+*5. Disscuss the differences between the two factor modelling approaches used in questions 1 and 4.* **(1 Mark)**
+
+The approach used in question 4 was an oblique rotation compared to no rotation in question 1. The 'promax' rotation give us a more accurate observation. The result of the oblique rotation is a set of loadings that reflect the simple structure better. As seen from the loadings, there are more missing values for the promax rotation and the variables that do have loadings are highly correlated with the the factors. (i.e, Factor 1 could not be properly determined by the loadings with no rotation, however, with promax we can clearly see the only two variables that are strongly correlated with factor 1 are experience and age.)
